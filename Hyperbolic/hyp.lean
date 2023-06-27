@@ -66,21 +66,28 @@ instance : futureVector origin where
     rw [v0]
     linarith
 
-noncomputable def normalized_time_like (v : vector) [timeLikeVector v] : vector :=
-  (1 / sqrt (-(inner_product v v))) * v
+-- IS THIS A GOOD IDEA?
+class futureUnitTimeLikeVector (vec : vector) extends futureVector vec, unitTimeLikeVector vec
 
---instance (v : vector) : unitTimeLikeVector (normalized_time_like v) where
---  unitTimeLike := by
-    
+noncomputable def normalized_time_like (v : vector) [timeLikeVector v] [futureVector v] : vector :=
+  (1 / sqrt (-(inner_product v v))) * v
+  
+-- THE FOLLOWING DOESN"T SEEM TO WORK?
+-- instance (v : vector) : unitTimeLikeVector (normalized_time_like v) where
+--  unitTimeLike := by sorry
+
+-- noncomputable def normalized_time_like2 (v : vector) 
+--    [t: timeLikeVector v] [f: futureVector v] : futureUnitTimeLikeVector := 
+-- WHAT DO I WRITE HERE?   
 
 end R13
 
 open R13
 
-noncomputable def distance (a b : vector) [unitTimeLikeVector a] [unitTimeLikeVector b] : ℝ  :=
+noncomputable def distance (a b : vector) [unitTimeLikeVector a] [futureVector a] [unitTimeLikeVector b] [futureVector b] : ℝ  :=
     Real.arcosh (-(inner_product a b))
 
-theorem zero_dis (a : vector) [u : unitTimeLikeVector a] : distance a a = 0 := by
+theorem zero_dis (a : vector) [u : unitTimeLikeVector a] [futureVector a] : distance a a = 0 := by
   rw [distance]
   rw [u.unitTimeLike]
   rw [arcosh]
@@ -89,13 +96,13 @@ theorem zero_dis (a : vector) [u : unitTimeLikeVector a] : distance a a = 0 := b
 theorem zero_dis_origin : distance origin origin = 0 := zero_dis origin
 
 structure Line where
-  endpoints : Fin 2 → vector
-  neg_prod : inner_product (endpoints 0).point (endpoints 1).point) < 0
+  endpoints : Fin 2 → vector -- NEED TO INDICATE THAT THESE ARE FUTURE AND UNIT TIME LIKE
+  neg_prod : inner_product (endpoints 0) (endpoints 1) < 0
 
 def PReal := { r : ℝ // 0 < r }
 
-def point_on_line (l : Line) (t : Fin 2 -> PReal) : FinitePoint :=
-  ⟨by sorry, by sorry, by sorry⟩
+def point_on_line (l : Line) (t : Fin 2 -> PReal) : vector :=
+  normalized_time_like (((t 0).val * (l.endpoints 0)) + ((t 1).val * (l.endpoints 1)))
 
 set_option maxHeartbeats 0
 
