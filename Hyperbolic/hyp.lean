@@ -12,31 +12,42 @@ open Real
 
 namespace R13
 
-def vector := Fin 4 → ℝ
+--def vector := Fin 4 → ℝ
 
-instance : Zero vector := ⟨ fun _ => 0⟩
-instance : Add vector := ⟨ fun a b => fun i => (a i) + (b i) ⟩
-instance : Neg vector := ⟨ fun a => fun i => -(a i)⟩
-instance : HMul ℝ vector vector := ⟨fun r v => fun i => r * (v i)⟩
+def vector := Fin 4 → ℝ
+deriving AddCommGroup
+
+noncomputable instance : Module ℝ vector := by delta vector; infer_instance
+
+--instance : Zero vector := ⟨ fun _ => 0⟩
+--instance : Add vector := ⟨ fun a b => fun i => (a i) + (b i) ⟩
+--instance : Neg vector := ⟨ fun a => fun i => -(a i)⟩
+--instance : HMul ℝ vector vector := ⟨fun r v => fun i => r * (v i)⟩
 
 def inner_product (a b : vector) : ℝ := -(a 0) * (b 0) + (a 1) * (b 1) + (a 2) * (b 2) + (a 3) * (b 3)
 
 theorem v_add (a b : vector) : a + b = fun i => (a i) + (b i) := rfl
-theorem v_hmul (r : ℝ) (a : vector) : r * a = fun i => r * (a i) := rfl
+theorem v_hmul (r : ℝ) (a : vector) : r • a = fun i => r • (a i) := rfl
+
+theorem v_addd (a b : vector) (i : Fin 4) : (a + b) i = (a i) + (b i) := rfl
 
 set_option maxHeartbeats 0
 
 theorem inner_product_lin0 (a b c : vector) : 
-    inner_product (a + b) c = inner_product a c + inner_product b c := by
+    inner_product (a + b) c = inner_product a c + inner_product b c := by  
   rw [inner_product]
   rw [inner_product]
   rw [inner_product]
-  rw [v_add]
-  dsimp
+  rw [v_addd]
+  rw [v_addd]
+  rw [v_addd]
+  rw [v_addd]
+--  rw [v_add]
+--  dsimp
   linarith
 
 theorem inner_product_lina0 (a : ℝ) (b c : vector) :
-    inner_product (a * b) c = a * inner_product b c := by
+    inner_product (a • b) c = a • inner_product b c := by
   rw [inner_product]
   rw [inner_product]
   rw [v_hmul]
@@ -53,7 +64,7 @@ theorem inner_product_lin1 (a b c : vector) :
   linarith
 
 theorem inner_product_lina1 (a : ℝ) (b c : vector) :
-    inner_product b (a * c) = a * inner_product b c := by
+    inner_product b (a • c) = a • inner_product b c := by
   rw [inner_product]
   rw [inner_product]
   rw [v_hmul]
@@ -113,31 +124,21 @@ theorem originFutureUnitTimeLike : isFutureUnitTimeLike timeBasisVector := by
   exact ⟨ originUnitTimeLike, originFuture ⟩
 
 noncomputable def normalized_time_like_vector (v : vector) :=
-  (1 / sqrt (-(inner_product v v))) * v
-
-theorem aaa (a : ℝ) (p: 0 < a) :  a⁻¹    * a = 1  := by
-  refine inv_mul_cancel ?h
-  exact ne_of_gt p
-
-theorem aa (a b : ℝ) (p : a > 0) (q : b > 0) : a * b > 0 := by
-  exact Real.mul_pos p q
-
+  (1 / sqrt (-(inner_product v v))) • v
 
 theorem normalized_time_like_vector_unit_time_like (v : vector) (p : isFutureTimeLike v) : 
        isFutureUnitTimeLike (normalized_time_like_vector v) := by
-  rw [normalized_time_like_vector, isFutureUnitTimeLike]
+  rw [normalized_time_like_vector, isFutureUnitTimeLike, isUnitTimeLike, isFuture]
+  rw [isFutureTimeLike, isTimeLike, isFuture] at p
+  cases' p with timeLike future
+  rw [← neg_pos] at timeLike
   constructor
-  · rw [isFutureTimeLike] at p
-    rw [isUnitTimeLike]
-    rw [inner_product_lina0, inner_product_lina1]
-    simp
-    have p1 := p.1
-    rw [isTimeLike] at p1
-    have p2 := neg_pos.mpr p1
-    have p3 := inv_pos.mpr p2
+  · rw [inner_product_lina0, inner_product_lina1]
+    simp only [one_div, smul_eq_mul]
+    have p3 := inv_pos.mpr timeLike
     have p4 := LT.lt.le p3
-    have p5 := ne_of_gt p2
-    have p6 : inner_product v v ≠ 0 := by exact Iff.mp neg_ne_zero p5
+    have p5 := ne_of_gt timeLike
+    have p6 := neg_ne_zero.mp p5
     rw [← sqrt_inv]
     rw [← mul_assoc]
     rw [mul_self_sqrt p4]
@@ -145,17 +146,13 @@ theorem normalized_time_like_vector_unit_time_like (v : vector) (p : isFutureTim
     rw [mul_inv]
     rw [mul_assoc]
     rw [inv_mul_cancel p6]
-    simp
+    simp only [mul_one]
     exact inv_neg_one
-  · rw [isFuture]
-    rw [isFutureTimeLike, isTimeLike, isFuture] at p
-    rw [v_hmul]
+  · rw [v_hmul]
     dsimp
-    have p1 := neg_pos.mpr p.1
-    have p2 := p.2
-    have p3 := sqrt_pos.mpr p1
+    have p3 := sqrt_pos.mpr timeLike
     have p4 := one_div_pos.mpr p3
-    exact Real.mul_pos p4 p2
+    exact Real.mul_pos p4 future
 
 end R13
 
@@ -193,11 +190,8 @@ structure Line where
   neg_prod : inner_product (endpoints 0) (endpoints 1) < 0
 
 noncomputable def sample_on_line (l : Line) (t : Fin 2 → PReal) : vector :=
-  (↑(t 0) : ℝ) * (↑(l.endpoints 0) : vector) +
-  (↑(t 1) : ℝ) * (↑(l.endpoints 1) : vector)
-
-theorem aaa (a: ℝ) (b:ℝ) (c : a < 0) (d : b > 0) : a * b < 0 := by
-  exact mul_neg_of_neg_of_pos c d
+  (↑(t 0) : ℝ) • (↑(l.endpoints 0) : vector) +
+  (↑(t 1) : ℝ) • (↑(l.endpoints 1) : vector)
 
 theorem sample_on_line_future_time_like (l : Line) (t : Fin 2 → PReal) :
             isFutureTimeLike (sample_on_line l t) := by
@@ -207,17 +201,13 @@ theorem sample_on_line_future_time_like (l : Line) (t : Fin 2 → PReal) :
     rw [inner_product_lina0, inner_product_lin1, inner_product_lina1]
     rw [inner_product_lina1]
     rw [inner_product_lina1]
-    have a := (l.endpoints 0).prop
-    rw [isFutureLightLike] at a
-    have b := a.1
-    rw [isLightLike] at b
-    rw [b]
-    have a1 := (l.endpoints 1).prop
-    rw [isFutureLightLike] at a1
-    have b1 := a1.1
-    rw [isLightLike] at b1
-    rw [b1]
-    simp
+    have z (i : Fin 2) : inner_product ↑(l.endpoints i) ↑(l.endpoints i) = 0 := by
+      have p := (l.endpoints i).prop
+      rw [isFutureLightLike, isLightLike] at p
+      exact p.1      
+    rw [z]
+    rw [z]
+    simp only [smul_eq_mul, mul_zero, zero_add, add_zero]
     have e := l.neg_prod
     rw [inner_product_sym]
     rw [inner_product_sym] at e
