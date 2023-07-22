@@ -4,190 +4,132 @@ import Mathlib.Analysis.SpecialFunctions.Arsinh
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Data.Vector
 import Mathlib.Data.Fin.VecNotation
+import Mathlib.LinearAlgebra.BilinearForm
+import Mathlib.Algebra.BigOperators.Basic
 import Hyperbolic.Arcosh
 
 import Mathlib.Data.Vector
 
-open Real
+open Real BigOperators
 
-namespace R13
+def Sign := {r : ℝ // r = 1 ∨ r = -1}
+instance : Coe Sign ℝ := ⟨ fun r => r.val ⟩
 
---def vector := Fin 4 → ℝ
+structure PseudoEuclideanSpace where
+  dim : Nat
+  signature : Fin dim → Sign
+  form : BilinForm ℝ (Fin dim → ℝ) := {
+    bilin := fun v w => ∑ i, (v i) * (w i) * (signature i)
+    bilin_add_left := sorry
+    bilin_smul_left := sorry
+    bilin_add_right := sorry
+    bilin_smul_right := sorry
+  }
 
-def vector := Fin 4 → ℝ
+namespace Minkowski
+
+@[reducible]
+def MinkowskiSpace : PseudoEuclideanSpace where
+  dim := 4
+  signature := ![⟨-1, by right; rfl⟩, ⟨1, by left; rfl⟩, ⟨1, by left; rfl⟩, ⟨1, by left; rfl⟩]
+
+@[reducible]
+def MVector := Fin 4 → ℝ
 deriving AddCommGroup
+noncomputable instance : Module ℝ MVector := by delta MVector; infer_instance
+def MForm := MinkowskiSpace.form
 
-noncomputable instance : Module ℝ vector := by delta vector; infer_instance
+theorem MForm_eval (v : MVector) (w : MVector) : 
+  MForm v w = ∑ i, (v i) * (w i) * (MinkowskiSpace.signature i) := by rfl
 
---instance : Zero vector := ⟨ fun _ => 0⟩
---instance : Add vector := ⟨ fun a b => fun i => (a i) + (b i) ⟩
---instance : Neg vector := ⟨ fun a => fun i => -(a i)⟩
---instance : HMul ℝ vector vector := ⟨fun r v => fun i => r * (v i)⟩
+def TimeLike (v : MVector) : Prop := MForm v v < 0
+def UnitTimeLike (v : MVector) : Prop := MForm v v = -1
+def LightLike (v : MVector) : Prop := MForm v v = 0
+def SpaceLike (v : MVector) : Prop := MForm v v > 0
+def UnitSpaceLike (v : MVector) : Prop := MForm v v =1
 
-def inner_product (a b : vector) : ℝ := -(a 0) * (b 0) + (a 1) * (b 1) + (a 2) * (b 2) + (a 3) * (b 3)
+def Future (v : MVector) : Prop := v 0 > 0
 
-theorem v_addd (a b : vector) (i : Fin 4) : (a + b) i = (a i) + (b i) := rfl
-theorem v_hmull (r : ℝ) (a : vector) (i : Fin 4) : (r • a) i = r •(a i) := rfl 
-
-
-theorem inner_product_lin0 (a b c : vector) : 
-    inner_product (a + b) c = inner_product a c + inner_product b c := by  
-  rw [inner_product]
-  rw [inner_product]
-  rw [inner_product]
-  rw [v_addd]
-  rw [v_addd]
-  rw [v_addd]
-  rw [v_addd]
-  linarith
-
-theorem inner_product_lina0 (a : ℝ) (b c : vector) :
-    inner_product (a • b) c = a • inner_product b c := by
-  rw [inner_product]
-  rw [inner_product]
-  rw [v_hmull]
-  rw [v_hmull]
-  rw [v_hmull]
-  rw [v_hmull]
-  dsimp
-  linarith
-
-theorem inner_product_lin1 (a b c : vector) : 
-    inner_product a (b + c) = inner_product a b + inner_product a c := by
-  rw [inner_product]
-  rw [inner_product]
-  rw [inner_product]
-  rw [v_addd]
-  rw [v_addd]
-  rw [v_addd]
-  rw [v_addd]
-  dsimp
-  linarith
-
-theorem inner_product_lina1 (a : ℝ) (b c : vector) :
-    inner_product b (a • c) = a • inner_product b c := by
-  rw [inner_product]
-  rw [inner_product]
-  rw [v_hmull]
-  rw [v_hmull]
-  rw [v_hmull]
-  rw [v_hmull]
-  dsimp
-  linarith
-
-theorem inner_product_sym (a b : vector) :
-    inner_product a b = inner_product b a := by
-  rw [inner_product]
-  rw [inner_product]
-  linarith
-
-def isUnitTimeLike (v : vector) : Prop := (inner_product v v) = -1
-def isTimeLike (v : vector) : Prop := (inner_product v v) < 0
-
-def isLightLike (v : vector) : Prop := (inner_product v v) = 0
-
-def isUnitSpaceLike (v : vector) : Prop := (inner_product v v) = 1
-def isSpaceLike (v : vector) : Prop := (inner_product v v) > 0
-
-def isFuture (v : vector) : Prop := (v 0) > 0
-
-def isFutureTimeLike (v : vector) : Prop := isTimeLike v ∧ isFuture v
-def isFutureUnitTimeLike (v : vector) : Prop := isUnitTimeLike v ∧ isFuture v
-def isFutureLightLike (v : vector) : Prop := isLightLike v ∧ isFuture v
-
-theorem unitTimeLikeTimeLike (v : vector) : isUnitTimeLike v → isTimeLike v := by
-  rw [isTimeLike, isUnitTimeLike]
+theorem UTL_TL (v : MVector) : UnitTimeLike v → TimeLike v := by
+  rw [TimeLike, UnitTimeLike]
   intro h
   rw [h]
   linarith
 
-theorem unitSpaceLikeSpaceLike (v : vector) : isUnitSpaceLike v →isSpaceLike v := by
-  rw [isSpaceLike, isUnitSpaceLike] 
+theorem USL_SL (v : MVector) : UnitSpaceLike v → SpaceLike v := by
+  rw [SpaceLike, UnitSpaceLike] 
   intro h
   rw [h]
   linarith
 
-def timeBasisVector : vector := ![1,0,0,0]
+@[reducible]
+def origin : MVector := ![1,0,0,0]
+theorem origin0 : origin 0 = 1 := by rfl
+theorem origin1 : origin 1 = 0 := by rfl
+theorem origin2 : origin 2 = 0 := by rfl
+theorem origin3 : origin 3 = 0 := by rfl
 
-theorem timeBasisVector0 : timeBasisVector 0 = 1 := rfl
-theorem timeBasisVector1 : timeBasisVector 1 = 0 := rfl
-theorem timeBasisVector2 : timeBasisVector 2 = 0 := rfl
-theorem timeBasisVector3 : timeBasisVector 3 = 0 := rfl
-
-theorem originUnitTimeLike : isUnitTimeLike timeBasisVector := by
-  rw [isUnitTimeLike, inner_product,
-      timeBasisVector0, timeBasisVector1, timeBasisVector2, timeBasisVector3]
+theorem origin_UTL : UnitTimeLike origin := by
+  rw [UnitTimeLike, MForm_eval origin origin, Fin.sum_univ_four]
+  rw [origin0, origin1, origin2, origin3]
   simp
 
-theorem originFuture : isFuture timeBasisVector := by
-  rw [isFuture, timeBasisVector0]
-  linarith
+theorem origin_Future : Future origin := by
+  rw [Future, origin0]
+  exact one_pos
 
-theorem originFutureUnitTimeLike : isFutureUnitTimeLike timeBasisVector := by
-  rw [isFutureUnitTimeLike]
-  exact ⟨ originUnitTimeLike, originFuture ⟩
+noncomputable def normalize_TL (v : MVector) :=
+  (sqrt (- MForm v v))⁻¹ • v 
 
-noncomputable def normalized_time_like_vector (v : vector) :=
-  (1 / sqrt (-(inner_product v v))) • v
+theorem normalize_TL_UTL (v : MVector) (hv : TimeLike v) : UnitTimeLike (normalize_TL v) := by
+  rw [TimeLike] at hv
+  rw [UnitTimeLike, normalize_TL]
+  rw [BilinForm.smul_left, BilinForm.smul_right]
+  rw [← mul_assoc, ← mul_inv, mul_self_sqrt (by linarith)]
+  rw [neg_eq_neg_one_mul, mul_inv, mul_assoc]
+  rw [inv_mul_cancel (by linarith)]
+  norm_num
 
-theorem normalized_time_like_vector_unit_time_like (v : vector) (p : isFutureTimeLike v) : 
-       isFutureUnitTimeLike (normalized_time_like_vector v) := by
-  rw [normalized_time_like_vector, isFutureUnitTimeLike, isUnitTimeLike, isFuture]
-  rw [isFutureTimeLike, isTimeLike, isFuture] at p
-  cases' p with timeLike future
-  rw [← neg_pos] at timeLike
-  constructor
-  · rw [inner_product_lina0, inner_product_lina1]
-    simp only [one_div, smul_eq_mul]
-    have p3 := inv_pos.mpr timeLike
-    have p4 := LT.lt.le p3
-    have p5 := ne_of_gt timeLike
-    have p6 := neg_ne_zero.mp p5
-    rw [← sqrt_inv]
-    rw [← mul_assoc]
-    rw [mul_self_sqrt p4]
-    rw [neg_eq_neg_one_mul]
-    rw [mul_inv]
-    rw [mul_assoc]
-    rw [inv_mul_cancel p6]
-    simp only [mul_one]
-    exact inv_neg_one
-  · rw [v_hmull]
-    dsimp
-    have p3 := sqrt_pos.mpr timeLike
-    have p4 := one_div_pos.mpr p3
-    exact Real.mul_pos p4 future
+theorem smul_MVector {r : Real} {v : MVector} : ∀ i, (r • v) i = r * (v i) := by intro i; rfl
 
-end R13
+theorem scale_Future {r : Real} (hr : r > 0) (hv : Future v) : Future (r • v) := by
+  rw [Future] at hv
+  rw [Future]
+  rw [smul_MVector 0]
+  exact Real.mul_pos hr hv
 
-open R13
+theorem normalize_TL_Future (v : MVector) (hvf : Future v) (hvt : TimeLike v) :
+  Future (normalize_TL v) := by
+    apply scale_Future _ hvf
+    apply inv_pos_of_pos
+    apply sqrt_pos_of_pos
+    rw [TimeLike] at hvt
+    linarith
 
 @[reducible]
-def point := { v : vector // isFutureUnitTimeLike v }
-
+def MPoint := { v : MVector // UnitTimeLike v ∧ Future v}
+instance : Coe MPoint MVector := ⟨ fun v => v.val ⟩
 @[reducible]
-def lightPoint := { v : vector // isFutureLightLike v}
+def LightPoint := { v : MVector // LightLike v ∧ Future v}
+instance : Coe LightPoint MVector := ⟨ fun v => v.val ⟩  
 
--- instance : Coe point vector := ⟨ fun p => p.val ⟩
--- instance : Coe lightPoint vector := ⟨ fun p => p.val ⟩
+noncomputable def normalized_TL (v : MVector) (hvt : TimeLike v) (hvf : Future v) : MPoint := 
+  ⟨ normalize_TL v, by
+    constructor
+    . exact normalize_TL_UTL v hvt
+    . exact normalize_TL_Future v hvf hvt ⟩
 
-noncomputable def normalized_time_like (v : vector) (p : isFutureTimeLike v) : point :=
-    ⟨ normalized_time_like_vector v, normalized_time_like_vector_unit_time_like v p⟩
+noncomputable def Distance (v w : MPoint) : ℝ := Real.arcosh (- MForm v w)
 
-noncomputable def distance (a b : point) : ℝ  :=
-    Real.arcosh (-(inner_product a b))
+def Origin : MPoint := ⟨ origin, ⟨origin_UTL, origin_Future⟩ ⟩
 
-def origin : point := ⟨ timeBasisVector, originFutureUnitTimeLike ⟩
-
-theorem zero_dis (a : point) : distance a a = 0 := by
-  rw [distance]
-  have h := a.prop
-  rw [isFutureUnitTimeLike, isUnitTimeLike] at h
-  rw [h.1]
-  rw [arcosh]
+theorem self_dist (v : MPoint) : Distance v v = 0 := by
+  rw [Distance, Real.arcosh, v.prop.1]
   simp
 
-theorem zero_dis_origin : distance origin origin = 0 := zero_dis origin
+end Minkowski
+
+#exit
 
 structure Line where
   endpoints : Fin 2 → lightPoint
@@ -389,69 +331,11 @@ theorem point_on_standard_horosphere1_general (t : PReal):
   linarith
 
 theorem point_on_standard_horosphere1_general2 (t : PReal):
-     is_point_on_horosphere (standard_ray (-log ↑t)) (standard_horosphere1 t ⟨-1, by linarith⟩) := by
-  have p := point_on_standard_horosphere1_general t
-  rw [is_point_on_horosphere]
-  rw [is_point_on_horosphere] at p
-  have dd : (⟨-1, by linarith⟩ : direction) = -(⟨1, by linarith⟩ : direction) := rfl
-  have s := mirror_x_standard_horosphere t ⟨1, by linarith⟩
-  rw [← dd] at s
-  rw [← s]
-  have ra := mirror_x_standard_ray (log t)
-  rw [← ra]
-  rw [← mirror_x_inner_product]
-  exact p
+     is_point_on_horosphere (standard_ray (-log ↑t)) (standard_horosphere1 t ⟨-1, by linarith⟩) := by sorry
 
 theorem d1 (t0 : PReal) (t1 : PReal) :
   let horosphere1 := (standard_horosphere1 t0 ⟨ 1, by linarith⟩)
   let horosphere2 := (standard_horosphere1 t1 ⟨ -1, by linarith⟩)
   let pt0 := (standard_ray (log ↑t0))
   let pt1 := (standard_ray (-(log ↑t1)))
-  distance pt0 pt1 = log (inner_product ↑horosphere1 ↑horosphere2) := by
-    dsimp
-    rw [distance]
-    rw [standard_ray, standard_ray]
-    rw [inner_product]
-    simp only [neg_mul, neg_add_rev, neg_neg]
-    rw [standard_ray_vector0, standard_ray_vector0,
-        standard_ray_vector1, standard_ray_vector1,
-        standard_ray_vector2, standard_ray_vector2,
-        standard_ray_vector3, standard_ray_vector3]
-    simp only [mul_zero, neg_zero, sinh_neg, mul_neg, neg_neg, cosh_neg, zero_add]
-    rw [inner_product]
-    rw [standard_horosphere1, standard_horosphere1]
-    simp only [neg_mul]
-    rw [standard_horosphere1_vector0, standard_horosphere1_vector0,
-        standard_horosphere1_vector1, standard_horosphere1_vector1,
-        standard_horosphere1_vector2, standard_horosphere1_vector2,
-        standard_horosphere1_vector3, standard_horosphere1_vector3]
-    cases' t0 with tt0 ttt0
-    cases' t1 with tt1 ttt1
-    dsimp
-    simp only [one_mul, neg_mul, mul_neg, mul_zero, add_zero]
-    rw [sinh_eq, sinh_eq, cosh_eq, cosh_eq]
-    rw [arcosh]
-    rw [exp_log ttt0]
-    rw [exp_log ttt1]
-    rw [exp_neg_log ⟨tt0,ttt0⟩]
-    rw [exp_neg_log ⟨tt1,ttt1⟩]
-    dsimp
-    simp
-    have a : ((tt0 - tt0⁻¹) / 2 * ((tt1 - tt1⁻¹) / 2) + (tt0 + tt0⁻¹) / 2 * ((tt1 + tt1⁻¹) / 2) +
-      sqrt (1 - ((tt0 - tt0⁻¹) / 2 * ((tt1 - tt1⁻¹) / 2) + (tt0 + tt0⁻¹) / 2 * ((tt1 + tt1⁻¹) / 2)) ^ 2)) = (-(tt0 * tt1) + -(tt0 * tt1)) := by
-      rw [sub_div]
-      rw [sub_div]
-      rw [sub_mul]
-      rw [mul_sub]
-      
-    rw [a]
-
-    
-
-
-
-
-
-
-#check Real.cosh_sq
-#check Real.sinh_arsinh
+  distance pt0 pt1 = log (inner_product ↑horosphere1 ↑horosphere2) := by sorry
