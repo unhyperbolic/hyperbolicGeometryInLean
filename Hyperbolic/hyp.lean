@@ -42,6 +42,10 @@ def MForm := MinkowskiSpace.form
 theorem MForm_eval (v : MVector) (w : MVector) : 
   MForm v w = ∑ i, (v i) * (w i) * (MinkowskiSpace.signature i) := by rfl
 
+theorem MForm_sym (v w : MVector) : MForm v w = MForm w v := by
+  rw [MForm_eval, MForm_eval, Fin.sum_univ_four, Fin.sum_univ_four]
+  ring
+
 def TimeLike (v : MVector) : Prop := MForm v v < 0
 def UnitTimeLike (v : MVector) : Prop := MForm v v = -1
 def LightLike (v : MVector) : Prop := MForm v v = 0
@@ -91,6 +95,7 @@ theorem normalize_TL_UTL (v : MVector) (hv : TimeLike v) : UnitTimeLike (normali
   norm_num
 
 theorem smul_MVector {r : Real} {v : MVector} : ∀ i, (r • v) i = r * (v i) := by intro i; rfl
+theorem add_MVector {v w : MVector} : ∀ i, (v + w) i = v i + w i := by intro i; rfl
 
 theorem scale_Future {r : Real} (hr : r > 0) (hv : Future v) : Future (r • v) := by
   rw [Future] at hv
@@ -127,47 +132,54 @@ theorem self_dist (v : MPoint) : Distance v v = 0 := by
   rw [Distance, Real.arcosh, v.prop.1]
   simp
 
-end Minkowski
-
-#exit
-
+@[reducible]
 structure Line where
-  endpoints : Fin 2 → lightPoint
-  neg_prod : inner_product (endpoints 0) (endpoints 1) < 0
+  endpoints : Fin 2 → LightPoint
+  neg_prod : MForm (endpoints 0) (endpoints 1) < 0
 
-noncomputable def sample_on_line (l : Line) (t : Fin 2 → PReal) : vector :=
-  (↑(t 0) : ℝ) • (↑(l.endpoints 0) : vector) +
-  (↑(t 1) : ℝ) • (↑(l.endpoints 1) : vector)
+noncomputable def PointOnLine (l : Line) (t : Fin 2 → PReal) : MVector :=
+  (t 0 : Real) • (l.endpoints 0 : MVector) +
+  (t 1 : Real) • (l.endpoints 1 : MVector)
 
-theorem sample_on_line_future_time_like (l : Line) (t : Fin 2 → PReal) :
-            isFutureTimeLike (sample_on_line l t) := by
-  rw [isFutureTimeLike, isTimeLike, isFuture, sample_on_line]
-  constructor
-  · rw [inner_product_lin0, inner_product_lina0, inner_product_lin1, inner_product_lina1]
-    rw [inner_product_lina0, inner_product_lin1, inner_product_lina1]
-    rw [inner_product_lina1]
-    rw [inner_product_lina1]
-    have z (i : Fin 2) : inner_product ↑(l.endpoints i) ↑(l.endpoints i) = 0 := by
-      have p := (l.endpoints i).prop
-      rw [isFutureLightLike, isLightLike] at p
-      exact p.1      
-    rw [z]
-    rw [z]
-    simp only [smul_eq_mul, mul_zero, zero_add, add_zero]
-    have e := l.neg_prod
-    rw [inner_product_sym]
-    rw [inner_product_sym] at e
-    have aa := mul_neg_of_neg_of_pos e (t 0).prop
-    have ab := mul_neg_of_neg_of_pos aa (t 1).prop
-    linarith
-  · rw [v_addd, v_hmull]
-    dsimp
-    have e0 (i : Fin 2) : (↑(l.endpoints i) : vector) 0 > 0 := by
-      have p := (l.endpoints i).prop
-      rw [isFutureLightLike, isFuture] at p
-      exact p.2
-    dsimp
-    exact add_pos (Real.mul_pos (t 0).prop (e0 0)) (Real.mul_pos (t 1).prop (e0 1))
+lemma endpoint_form (l : Line) (i : Fin 2) :
+  MForm (l.endpoints i) (l.endpoints i) = 0 := by
+  have h := (l.endpoints i).prop
+  rw [LightLike, Future] at h
+  exact h.1
+
+theorem lines_timelike (l : Line) (t : Fin 2 → PReal) :
+  TimeLike (PointOnLine l t) := by
+  rw [TimeLike, PointOnLine]
+  -- constructor
+  -- . rw [add_MVector, smul_MVector, smul_MVector]
+  --   apply add_pos <;> apply mul_pos
+  --   exact (t 0).prop
+  --   exact (l.endpoints 0).prop.2
+  --   exact (t 1).prop
+  --   exact (l.endpoints 1).prop.2
+  simp; rw [endpoint_form, endpoint_form, MForm_sym]; simp 
+  have _ := l.neg_prod
+  ring_nf
+  apply mul_neg_of_neg_of_pos _ (by linarith)
+  rw [mul_assoc]
+  apply mul_neg_of_pos_of_neg (t 0).prop
+  exact mul_neg_of_pos_of_neg (t 1).prop l.neg_prod
+
+#check normalize_TL_UTL
+#check normalize_TL_Future
+#check normalize_TL
+
+noncomputable def MPoint_on_line (l : Line) (t : Fin 2 → PReal) : MPoint :=
+  ⟨normalize_TL (PointOnLine l t), by
+    constructor
+    . exact normalize_TL_UTL (normalize_TL <| PointOnLine l t) (lines_timelike l t)
+    . exact normalize_TL_Future (normalize_TL <| PointOnLine l t)
+  ⟩
+
+
+
+end Minkowski
+#exit
 
 noncomputable def normalized_sample_on_line_vector (l : Line) (t : Fin 2 → PReal) : vector :=
   normalized_time_like_vector (sample_on_line l t)
