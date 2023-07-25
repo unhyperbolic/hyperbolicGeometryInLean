@@ -150,13 +150,6 @@ lemma endpoint_form (l : Line) (i : Fin 2) :
 theorem lines_timelike (l : Line) (t : Fin 2 → PReal) :
   TimeLike (PointOnLine l t) := by
   rw [TimeLike, PointOnLine]
-  -- constructor
-  -- . rw [add_MVector, smul_MVector, smul_MVector]
-  --   apply add_pos <;> apply mul_pos
-  --   exact (t 0).prop
-  --   exact (l.endpoints 0).prop.2
-  --   exact (t 1).prop
-  --   exact (l.endpoints 1).prop.2
   simp; rw [endpoint_form, endpoint_form, MForm_sym]; simp 
   have _ := l.neg_prod
   ring_nf
@@ -165,34 +158,31 @@ theorem lines_timelike (l : Line) (t : Fin 2 → PReal) :
   apply mul_neg_of_pos_of_neg (t 0).prop
   exact mul_neg_of_pos_of_neg (t 1).prop l.neg_prod
 
-#check normalize_TL_UTL
-#check normalize_TL_Future
-#check normalize_TL
+lemma lines_future (l : Line) (t : Fin 2 → PReal) : Future (PointOnLine l t) := by
+  rw [Future, PointOnLine, add_MVector, smul_MVector, smul_MVector]
+  apply add_pos <;> apply mul_pos
+  exact (t 0).prop
+  exact (l.endpoints 0).prop.2
+  exact (t 1).prop
+  exact (l.endpoints 1).prop.2
 
 noncomputable def MPoint_on_line (l : Line) (t : Fin 2 → PReal) : MPoint :=
   ⟨normalize_TL (PointOnLine l t), by
     constructor
-    . exact normalize_TL_UTL (normalize_TL <| PointOnLine l t) (lines_timelike l t)
-    . exact normalize_TL_Future (normalize_TL <| PointOnLine l t)
+    . exact normalize_TL_UTL (PointOnLine l t) (lines_timelike l t)
+    . exact normalize_TL_Future (PointOnLine l t) (lines_future l t) (lines_timelike l t)
   ⟩
 
+def HPoint (v : MPoint) (w : LightPoint) : Prop := MForm v w = -1
 
+noncomputable def RayVector (t : ℝ) : MVector := ![cosh t, sinh t, 0, 0]
+lemma RayVector0 (t : ℝ) : RayVector t 0 = cosh t := rfl
+lemma RayVector1 (t : ℝ) : RayVector t 1 = sinh t := rfl
+lemma RayVector2 (t : ℝ) : RayVector t 2 = 0 := rfl
+lemma RayVector3 (t : ℝ) : RayVector t 3 = 0 := rfl
 
 end Minkowski
 #exit
-
-noncomputable def normalized_sample_on_line_vector (l : Line) (t : Fin 2 → PReal) : vector :=
-  normalized_time_like_vector (sample_on_line l t)
-
-noncomputable def point_on_line (l : Line) (t : Fin 2 → PReal) : point :=
-  ⟨ normalized_sample_on_line_vector l t,
-    by
-      apply normalized_time_like_vector_unit_time_like
-      apply sample_on_line_future_time_like
-  ⟩
-
-def is_point_on_horosphere (p : point) (h : lightPoint) :=
-  inner_product (↑p : vector) (↑h : vector) = -1
 
 noncomputable def standard_ray_vector (t : ℝ) : vector := ![cosh t, sinh t, 0, 0]
 
