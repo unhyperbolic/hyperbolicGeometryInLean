@@ -181,163 +181,116 @@ lemma RayVector1 (t : ℝ) : RayVector t 1 = sinh t := rfl
 lemma RayVector2 (t : ℝ) : RayVector t 2 = 0 := rfl
 lemma RayVector3 (t : ℝ) : RayVector t 3 = 0 := rfl
 
-end Minkowski
-#exit
+noncomputable def MRay (t : ℝ) : MPoint := ⟨RayVector t, by
+  constructor
+  . rw [UnitTimeLike, MForm_eval, Fin.sum_univ_four]
+    rw [RayVector0, RayVector1, RayVector2, RayVector3]
+    rw [← sq, ← sq, Real.cosh_sq]
+    simp
+  . rw [Future, RayVector0]
+    exact Real.cosh_pos t
+  ⟩
 
-noncomputable def standard_ray_vector (t : ℝ) : vector := ![cosh t, sinh t, 0, 0]
-
-theorem standard_ray_vector0 (t : ℝ) : standard_ray_vector t 0 = cosh t := rfl
-theorem standard_ray_vector1 (t : ℝ) : standard_ray_vector t 1 = sinh t := rfl
-theorem standard_ray_vector2 (t : ℝ) : standard_ray_vector t 2 = 0 := rfl
-theorem standard_ray_vector3 (t : ℝ) : standard_ray_vector t 3 = 0 := rfl
-
-noncomputable def standard_ray (t : ℝ) : point :=
-  ⟨standard_ray_vector t,
-   by 
-      rw [isFutureUnitTimeLike, isUnitTimeLike, isFuture]
-      constructor
-      · rw [inner_product]
-        rw [standard_ray_vector0, standard_ray_vector1, standard_ray_vector2, standard_ray_vector3]
-        simp
-        rw [← sq, ← sq]
-        rw [Real.cosh_sq]
-        simp
-      · rw [standard_ray_vector0]
-        exact cosh_pos t⟩
-
-def standard_horosphere1_vector (t : ℝ) (s : ℝ) : vector := ![t,s * t,0,0]
-
-theorem standard_horosphere1_vector0 (t : ℝ) (s : ℝ) : standard_horosphere1_vector t s 0 = t := rfl
-theorem standard_horosphere1_vector1 (t : ℝ) (s : ℝ) : standard_horosphere1_vector t s 1 = s * t := rfl
-theorem standard_horosphere1_vector2 (t : ℝ) (s : ℝ) : standard_horosphere1_vector t s 2 = 0 := rfl
-theorem standard_horosphere1_vector3 (t : ℝ) (s : ℝ) : standard_horosphere1_vector t s 3 = 0 := rfl
+def HVector (t s : ℝ) : MVector := ![t, s * t, 0, 0]
+lemma HVector0 (t s : ℝ) : HVector t s 0 = t := rfl
+lemma HVector1 (t s : ℝ) : HVector t s 1 = s * t := rfl
+lemma HVector2 (t s : ℝ) : HVector t s 2 = 0 := rfl
+lemma HVector3 (t s : ℝ) : HVector t s 3 = 0 := rfl
 
 @[reducible]
-def direction := { r : ℝ // r^2 = 1 }
+def Direction := { r : ℝ // r^2 = 1 }
+instance : Coe Direction ℝ := ⟨ fun r => r.val ⟩
 
-instance : Neg direction := ⟨ fun r => ⟨-↑r, by 
-  cases' r with rr rrr
-  dsimp
+instance : Neg Direction := ⟨fun r => ⟨-r, by
   rw [neg_sq]
-  exact rrr
-  ⟩⟩
+  exact r.prop
+  ⟩ ⟩
 
--- instance : Coe direction ℝ := ⟨ fun p => p.val ⟩
+def HLightPoint (t : PReal) (s : Direction) : LightPoint := ⟨ HVector t s, by
+  rw [LightLike, Future]
+  constructor
+  . rw [MForm_eval, Fin.sum_univ_four]
+    rw [HVector0, HVector1, HVector2, HVector3]
+    simp; ring_nf
+    rw [s.prop]
+    ring
+  . rw [HVector0]
+    exact t.prop
+  ⟩
 
+theorem horosphere_point1 : HPoint (MRay 0) (HLightPoint ⟨1, by linarith⟩ ⟨1, by linarith⟩) := by
+  rw [HPoint, MForm_eval, Fin.sum_univ_four, MRay, HLightPoint]
+  simp
+  rw [RayVector0, RayVector1, RayVector2, RayVector3]
+  rw [HVector0, HVector1, HVector2, HVector3]
+  simp
 
-def standard_horosphere1 (t : PReal) (s : direction) : lightPoint :=
-  ⟨standard_horosphere1_vector t s,
-   by
-      rw [isFutureLightLike, isLightLike, isFuture]
-      constructor
-      · rw [inner_product]
-        rw [standard_horosphere1_vector0,standard_horosphere1_vector1,standard_horosphere1_vector2,standard_horosphere1_vector3]
-        simp only [neg_mul, mul_zero, add_zero]
-        cases' t with tt
-        cases' s with ss sss
-        dsimp
-        have g : -(tt * tt) + ss * tt * (ss * tt) = -tt ^ 2 + ss ^ 2 * tt ^2 := by
-           linarith
-        rw [g]
-        rw [sss]
-        linarith
-      · rw [standard_horosphere1_vector0]
-        cases' t with tt ttt
-        dsimp
-        exact ttt
-     ⟩
+def MirrorX (v : MVector) := ![v 0, -(v 1), v 2, v 3]
+lemma MirrorX0 (v : MVector) : (MirrorX v) 0 = v 0 := rfl
+lemma MirrorX1 (v : MVector) : (MirrorX v) 1 = -(v 1) := rfl
+lemma MirrorX2 (v : MVector) : (MirrorX v) 2 = v 2 := rfl
+lemma MirrorX3 (v : MVector) : (MirrorX v) 3 = v 3 := rfl
 
-theorem point_on_standard_horosphere1 :
-    is_point_on_horosphere (standard_ray 0) (standard_horosphere1 ⟨1, by linarith⟩ ⟨ 1, by linarith⟩) := by
-  rw [is_point_on_horosphere]
-  rw [inner_product]
-  rw [standard_ray]
-  rw [standard_horosphere1]
-  dsimp
-  rw [standard_ray_vector0, standard_ray_vector1, standard_ray_vector2, standard_ray_vector3]
-  rw [standard_horosphere1_vector0,standard_horosphere1_vector1,standard_horosphere1_vector2,standard_horosphere1_vector3]
-  simp only [cosh_zero, mul_one, sinh_zero, add_zero, mul_zero]
+theorem mirrorx_MForm (v w : MVector) : MForm (MirrorX v) (MirrorX w) = MForm v w := by
+  rw [MForm_eval, Fin.sum_univ_four]
+  rw [MForm_eval, Fin.sum_univ_four]
+  rw [MirrorX0, MirrorX1, MirrorX2, MirrorX3]
+  rw [MirrorX0, MirrorX1, MirrorX2, MirrorX3]
+  simp
 
-set_option maxHeartbeats 0
+theorem mirrorx_MRay (t : ℝ) : MirrorX (MRay t) = MRay (-t) := by
+  rw [MirrorX, MRay, MRay]
+  simp
+  rw [RayVector0, RayVector1, RayVector2, RayVector3, RayVector]
+  simp
 
-def mirror_x (v : vector) := ![v 0, -(v 1), v 2, v 3]
-
-theorem mirror_x0 (v : vector) : (mirror_x v) 0 = v 0 := rfl
-theorem mirror_x1 (v : vector) : (mirror_x v) 1 = -(v 1) := rfl
-theorem mirror_x2 (v : vector) : (mirror_x v) 2 = v 2 := rfl
-theorem mirror_x3 (v : vector) : (mirror_x v) 3 = v 3 := rfl
-
-theorem mirror_x_inner_product (u v : vector) : inner_product u v = inner_product (mirror_x u) (mirror_x v) := by
-  rw [inner_product]
-  rw [inner_product]
-  rw [mirror_x0, mirror_x0, mirror_x1, mirror_x1, mirror_x2, mirror_x2, mirror_x3, mirror_x3]
-  linarith
-
-theorem mirror_x_standard_ray (t : ℝ) : mirror_x ↑(standard_ray t) = (↑(standard_ray (-t)) : vector) := by
-  rw [mirror_x]
-  rw [standard_ray]
-  rw [standard_ray]
-  dsimp
-  rw [standard_ray_vector0, standard_ray_vector1, standard_ray_vector2, standard_ray_vector3]
-  rw [standard_ray_vector]
-  rw [sinh_neg]
-  rw [cosh_neg]
-
-theorem mirror_x_standard_horosphere (t : PReal) (d : direction) : mirror_x ↑(standard_horosphere1 t d) = (↑(standard_horosphere1 t (-d)) : vector) := by
-  rw [mirror_x]
-  rw [standard_horosphere1]
-  rw [standard_horosphere1]
-  dsimp
-  rw [standard_horosphere1_vector0, standard_horosphere1_vector1, standard_horosphere1_vector2, standard_horosphere1_vector3]
-  rw [standard_horosphere1_vector]
-  cases' d with dd ddd
-  cases' t with tt ttt
-  dsimp
+theorem mirrorx_HLightPoint (t : PReal) (d : Direction) :
+  MirrorX (HLightPoint t d) = HLightPoint t (-d) := by
+  rw [MirrorX, HLightPoint, HLightPoint]
+  simp
+  rw [HVector0, HVector1, HVector2, HVector3, HVector]
   rw [← neg_mul]
   rfl
 
 theorem exp_neg_log (t : PReal) : exp (-log t) = 1/t := by
-  cases' t with tt ttt
-  have a : exp (-log tt) * exp (log tt) = 1 := by
-    rw [← exp_add]
-    simp only [add_left_neg, exp_zero]
-  rw [exp_log ttt] at a
-  symm
-  rw [div_eq_iff (ne_of_gt ttt)]
-  symm
-  exact a
+  rw [exp_neg (log t), exp_log t.prop]
+  simp
+  
+theorem horosphere_point_general (t : PReal) :
+  HPoint (MRay (log t)) (HLightPoint t ⟨1, by linarith⟩) := by
+  rw [HPoint, MRay, HLightPoint]
+  rw [MForm_eval, Fin.sum_univ_four]
+  simp
+  rw [RayVector0, RayVector1, RayVector2, RayVector3, HVector]
+  simp
+  rw [← neg_mul, cosh_log t.prop, sinh_log t.prop]
+  ring_nf
+  rw [mul_inv_cancel]
+  linarith [t.prop]
 
-theorem point_on_standard_horosphere1_general (t : PReal):
-    is_point_on_horosphere (standard_ray (log ↑t)) (standard_horosphere1 t ⟨1, by linarith⟩) := by
-  rw [is_point_on_horosphere]
-  rw [inner_product]
-  rw [standard_ray]
-  rw [standard_horosphere1]
-  dsimp
-  rw [standard_ray_vector0, standard_ray_vector1, standard_ray_vector2, standard_ray_vector3]
-  rw [standard_horosphere1_vector0,standard_horosphere1_vector1,standard_horosphere1_vector2,standard_horosphere1_vector3]
-  simp only [neg_mul, one_mul, mul_zero, add_zero] 
-  cases' t with tt ttt
-  dsimp
-  rw [cosh_eq, sinh_eq]
-  rw [exp_log ttt]
-  rw [exp_neg_log ⟨tt, ttt⟩]
-  simp only [one_div]
-  rw [mul_comm]
-  rw [mul_div]
-  rw [mul_add]
-  rw [mul_comm ((tt - tt⁻¹) / 2) tt]
-  rw [mul_div]
-  rw [mul_sub]
-  rw [mul_inv_cancel (ne_of_gt ttt)]
-  linarith
+theorem horosphere_point_general_neg (t : PReal) : 
+  HPoint (MRay (-log t)) (HLightPoint t ⟨-1, by linarith⟩) := by
+  rw [HPoint, MRay, HLightPoint]
+  rw [MForm_eval, Fin.sum_univ_four]
+  simp
+  rw [RayVector0, RayVector1, RayVector2, RayVector3, HVector]
+  simp
+  rw [← neg_mul, cosh_log t.prop, sinh_log t.prop]
+  ring_nf
+  rw [mul_inv_cancel]
+  linarith [t.prop]
 
-theorem point_on_standard_horosphere1_general2 (t : PReal):
-     is_point_on_horosphere (standard_ray (-log ↑t)) (standard_horosphere1 t ⟨-1, by linarith⟩) := by sorry
+def HLP1 (t0 : PReal) := HLightPoint t0 ⟨1, by linarith⟩
+def HLP2 (t1 : PReal):= HLightPoint t1 ⟨-1, by linarith⟩
+noncomputable def MRay1 (t0 : PReal) := MRay (log t0)
+noncomputable def MRay2 (t1 : PReal) := MRay (-log t1)
 
-theorem d1 (t0 : PReal) (t1 : PReal) :
-  let horosphere1 := (standard_horosphere1 t0 ⟨ 1, by linarith⟩)
-  let horosphere2 := (standard_horosphere1 t1 ⟨ -1, by linarith⟩)
-  let pt0 := (standard_ray (log ↑t0))
-  let pt1 := (standard_ray (-(log ↑t1)))
-  distance pt0 pt1 = log (inner_product ↑horosphere1 ↑horosphere2) := by sorry
+theorem d1 (t0 t1 : PReal) : 
+  Distance (MRay1 t0) (MRay2 t1) = log (MForm (HLP1 t0) (HLP2 t1)) := by
+  rw [Distance, MRay1, MRay2, HLP1, HLP2, MRay, MRay, HLightPoint, HLightPoint]
+  rw [MForm_eval, MForm_eval, Fin.sum_univ_four, Fin.sum_univ_four]
+  simp [RayVector0, RayVector1, RayVector2, RayVector3]
+  simp [HVector0, HVector1, HVector2, HVector3]
+  sorry
+
+end Minkowski

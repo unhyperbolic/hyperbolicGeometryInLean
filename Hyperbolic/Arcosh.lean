@@ -9,7 +9,9 @@ def PReal := { r : ℝ // 0 < r }
 
 instance : Coe PReal ℝ := ⟨ fun p => p.val ⟩
 
+@[reducible]
 noncomputable def arcosh (x : ℝ) :=
   log (x + sqrt (1 - x ^ 2))
+  
 
 end Real
