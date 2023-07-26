@@ -283,7 +283,7 @@ theorem horosphere_point_general_neg (t : PReal) :
 def HLP1 (t0 : PReal) := HLightPoint t0 ⟨1, by linarith⟩
 def HLP2 (t1 : PReal):= HLightPoint t1 ⟨-1, by linarith⟩
 noncomputable def MRay1 (t0 : PReal) := MRay (log t0)
-noncomputable def MRay2 (t1 : PReal) := MRay (-log t1)
+noncomputable def MRay2 (t1 : PReal) := MRay (-(log t1))
 
 theorem d1 (t0 t1 : PReal) : 
   Distance (MRay1 t0) (MRay2 t1) = log (MForm (HLP1 t0) (HLP2 t1)) := by
@@ -292,5 +292,5 @@ theorem d1 (t0 t1 : PReal) :
   simp [RayVector0, RayVector1, RayVector2, RayVector3]
   simp [HVector0, HVector1, HVector2, HVector3]
   sorry
-
+  
 end Minkowski
