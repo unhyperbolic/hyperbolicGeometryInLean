@@ -15,15 +15,15 @@ def MinusSign : Sign := ⟨-1, by right; rfl⟩
 end PseudoEuclideanSpace
 
 @[reducible, nolint unusedArguments]
-def PseudoEuclideanSpace {f : Type _} [Fintype f] (_: f → PseudoEuclideanSpace.Sign) := f → ℝ
+def PseudoEuclideanSpace {f : Type _} [Fintype f] [BEq f] (_: f → PseudoEuclideanSpace.Sign) := f → ℝ
 
-instance : AddCommGroup (@PseudoEuclideanSpace f k signature) := inferInstanceAs <| AddCommGroup (f → ℝ)
-noncomputable instance : Module ℝ (@PseudoEuclideanSpace f k signature) := by delta PseudoEuclideanSpace; infer_instance
+instance : AddCommGroup (@PseudoEuclideanSpace f k b signature) := inferInstanceAs <| AddCommGroup (f → ℝ)
+noncomputable instance : Module ℝ (@PseudoEuclideanSpace f k b signature) := by delta PseudoEuclideanSpace; infer_instance
 
-instance : Inner ℝ (@PseudoEuclideanSpace f k signature) :=
+instance : Inner ℝ (@PseudoEuclideanSpace f k b signature) :=
   ⟨fun v w => ∑ i, (v i) * (w i) * (signature i)⟩
 
-def PseudoEuclideanSpaceBilinearForm : BilinForm ℝ (@PseudoEuclideanSpace f k signature) := {
+def PseudoEuclideanSpaceBilinearForm : BilinForm ℝ (@PseudoEuclideanSpace f k b signature) := {
     bilin := fun v w => ⟪v, w⟫_ℝ
     bilin_add_left := by
       dsimp
@@ -75,9 +75,19 @@ class PseudoInnerProductSpace (𝕜 : Type _) (E : Type _) [IsROrC 𝕜] [AddCom
    Inner 𝕜 E where
    bilin_form : BilinForm 𝕜 E
    symm : ∀ (u v : E), inner u v = inner v u
-   nondeg : ∀ (u : E), (∀ (v : E), inner u v = 0 → u = 0)
+   nondeg : ∀ (u : E), (∀ (v : E), inner u v = 0) → u = 0
 
-noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k signature) :=
+theorem pseudo_euclidean_inner_product_sum (u v : (@PseudoEuclideanSpace f k b signature)) [Fintype f] : 
+      inner u v = ∑ i : f, u i * v i * ↑(signature i) := by
+  rw [inner, instInnerRealPseudoEuclideanSpace]
+  simp only [Pi.add_apply]
+  sorry
+
+#check Finset.sum_boole
+#check Finset.mul_sum
+#check Finset.sum_eq_single_of_mem
+
+noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k b signature) :=
   ⟨PseudoEuclideanSpaceBilinearForm,
     by
       intro u v
@@ -86,8 +96,18 @@ noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k 
       apply congrArg (Finset.sum Finset.univ)
       refine Eq.symm (funext ?h)
       intro x
-      linarith
-   , by sorry⟩
+      linarith,
+    by
+      intro u i
+      apply funext
+      dsimp
+      intro j
+      have p := i (fun (i : f) => if i == j then 1 else 0)
+      rw [inner, instInnerRealPseudoEuclideanSpace] at p
+      simp only [mul_ite, mul_one, mul_zero, ite_mul, zero_mul] at p 
+      simp only [Finset.sum_eq_single_of_mem] at p
+
+      ⟩
    
 
 def MinkowskiSpaceSignature (d : ℕ) : Fin d → PseudoEuclideanSpace.Sign :=
