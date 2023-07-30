@@ -41,5 +41,5 @@ def Future (v : MinkowskiSpace d) : Prop := v 0 > 0
 def Hyperboloid (d : ℕ+) := { p : MinkowskiSpace d // TimeLike p ∧ Future p}
 
 noncomputable instance : Dist (MinkowskiSpace d) :=
-  ⟨fun v w => Real.arcosh (-(⟪v, w⟫_ℝ))⟩
+  ⟨fun v w => Real.arcosh (-⟪v, w⟫_ℝ)⟩
 
