@@ -15,7 +15,7 @@ def Minus : Sign := ⟨-1, by right; rfl⟩
 end PseudoEuclideanSpace
 
 @[reducible, nolint unusedArguments]
-def PseudoEuclideanSpace {f : Type _} [Fintype f] [BEq f] (_: f → PseudoEuclideanSpace.Sign) := f → ℝ
+def PseudoEuclideanSpace {f : Type _} [Fintype f] [DecidableEq f] (_: f → PseudoEuclideanSpace.Sign) := f → ℝ
 
 instance : AddCommGroup (@PseudoEuclideanSpace f k b signature) := inferInstanceAs <| AddCommGroup (f → ℝ)
 noncomputable instance : Module ℝ (@PseudoEuclideanSpace f k b signature) := by delta PseudoEuclideanSpace; infer_instance
@@ -25,7 +25,7 @@ instance : Inner ℝ (@PseudoEuclideanSpace f k b signature) :=
 
 namespace PseudoEuclideanSpace
 
-def BasisVector {f : Type _} [Fintype f] [DecidableEq f] (_: f → PseudoEuclideanSpace.Sign) (i : f) :=
+def BasisVector {f : Type _} [k: Fintype f] [b : DecidableEq f] (signature: f → PseudoEuclideanSpace.Sign) (i : f) : (@PseudoEuclideanSpace f k b signature) :=
   (fun (j : f) => if i = j then 1 else 0)
 
 end PseudoEuclideanSpace
@@ -109,7 +109,7 @@ noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k 
       apply funext
       dsimp
       intro j
-      have p := i (fun (i : f) => if i == j then 1 else 0)
+      have p := i (PseudoEuclideanSpace.BasisVector signature j)
       rw [inner, instInnerRealPseudoEuclideanSpace] at p
       simp only [mul_ite, mul_one, mul_zero, ite_mul, zero_mul] at p 
       simp only [Finset.sum_eq_single_of_mem] at p
