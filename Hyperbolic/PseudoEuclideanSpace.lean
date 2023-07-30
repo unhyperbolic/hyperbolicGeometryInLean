@@ -23,7 +23,7 @@ noncomputable instance : Module ℝ (@PseudoEuclideanSpace f k signature) := by 
 instance : Inner ℝ (@PseudoEuclideanSpace f k signature) :=
   ⟨fun v w => ∑ i, (v i) * (w i) * (signature i)⟩
 
-def MinkowskiSpaceSignature (n : ℕ) : Fin n → PseudoEuclideanSpace.Sign :=
+def MinkowskiSpaceSignature (d : ℕ) : Fin d → PseudoEuclideanSpace.Sign :=
     fun i => if (↑i : ℕ) == 0 then PseudoEuclideanSpace.MinusSign else PseudoEuclideanSpace.PlusSign
 
 def MinkowskiSpace (d : ℕ+) := PseudoEuclideanSpace (MinkowskiSpaceSignature d)
