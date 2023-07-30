@@ -9,8 +9,8 @@ namespace PseudoEuclideanSpace
 def Sign := {r : ℝ // r = 1 ∨ r = -1}
 instance : Coe Sign ℝ := ⟨ fun r => r.val ⟩
 
-def PlusSign  : Sign := ⟨ 1, by left;  rfl⟩
-def MinusSign : Sign := ⟨-1, by right; rfl⟩
+def Plus  : Sign := ⟨ 1, by left;  rfl⟩
+def Minus : Sign := ⟨-1, by right; rfl⟩
 
 end PseudoEuclideanSpace
 
@@ -22,6 +22,13 @@ noncomputable instance : Module ℝ (@PseudoEuclideanSpace f k b signature) := b
 
 instance : Inner ℝ (@PseudoEuclideanSpace f k b signature) :=
   ⟨fun v w => ∑ i, (v i) * (w i) * (signature i)⟩
+
+namespace PseudoEuclideanSpace
+
+def BasisVector {f : Type _} [Fintype f] [DecidableEq f] (_: f → PseudoEuclideanSpace.Sign) (i : f) :=
+  (fun (j : f) => if i = j then 1 else 0)
+
+end PseudoEuclideanSpace
 
 def PseudoEuclideanSpaceBilinearForm : BilinForm ℝ (@PseudoEuclideanSpace f k b signature) := {
     bilin := fun v w => ⟪v, w⟫_ℝ
@@ -111,7 +118,7 @@ noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k 
    
 
 def MinkowskiSpaceSignature (d : ℕ) : Fin d → PseudoEuclideanSpace.Sign :=
-    fun i => if (↑i : ℕ) == 0 then PseudoEuclideanSpace.MinusSign else PseudoEuclideanSpace.PlusSign
+    fun i => if (↑i : ℕ) = 0 then PseudoEuclideanSpace.Minus else PseudoEuclideanSpace.Plus
 
 def MinkowskiSpace (d : ℕ+) := PseudoEuclideanSpace (MinkowskiSpaceSignature d)
 
@@ -125,8 +132,12 @@ def UnitSpaceLike (v : MinkowskiSpace d) : Prop := ⟪v,v⟫_ℝ =1
 
 def Future (v : MinkowskiSpace d) : Prop := v 0 > 0
 
-def Hyperboloid (d : ℕ+) := { p : MinkowskiSpace d // TimeLike p ∧ Future p}
+def Hyperboloid (d : ℕ) := { p : MinkowskiSpace ⟨d + 1, by linarith⟩ // TimeLike p ∧ Future p}
 
-noncomputable instance : Dist (MinkowskiSpace d) :=
+instance : Coe (Hyperboloid (d : ℕ)) (MinkowskiSpace ⟨d + 1, by linarith⟩) := ⟨ fun r => r.val ⟩
+
+instance : Inner ℝ (Hyperboloid d) := ⟨fun v w => ⟪v.val,w.val⟫_ℝ⟩
+
+noncomputable instance : Dist (Hyperboloid d) :=
   ⟨fun v w => Real.arcosh (-⟪v, w⟫_ℝ)⟩
 
