@@ -33,7 +33,12 @@ theorem inner_product_basis_vector {f : Type _} [k: Fintype f] [b : DecidableEq 
   by
     rw [inner, instInnerRealPseudoEuclideanSpace]
     simp only [Pi.add_apply]
+    rw [PseudoEuclideanSpace.BasisVector]
     sorry
+
+theorem inner_product_sum {f : Type _} [Fintype f] [b : DecidableEq f] {signature: f → PseudoEuclideanSpace.Sign} [k: Fintype f] (u v : (@PseudoEuclideanSpace f k b signature)): 
+      inner u v = ∑ i : f, u i * v i * ↑(signature i) := by
+  rw [inner, instInnerRealPseudoEuclideanSpace]
 
 end PseudoEuclideanSpace
 
@@ -41,9 +46,10 @@ def PseudoEuclideanSpaceBilinearForm : BilinForm ℝ (@PseudoEuclideanSpace f k 
     bilin := fun v w => ⟪v, w⟫_ℝ
     bilin_add_left := by
       dsimp
-      rw [inner, instInnerRealPseudoEuclideanSpace]
-      simp only [Pi.add_apply]
       intro x y z
+      rw [PseudoEuclideanSpace.inner_product_sum]
+      rw [PseudoEuclideanSpace.inner_product_sum]
+      rw [PseudoEuclideanSpace.inner_product_sum]
       simp [← Finset.sum_add_distrib]
       apply congrArg (Finset.sum Finset.univ)
       refine Eq.symm (funext ?h)
@@ -91,13 +97,6 @@ class PseudoInnerProductSpace (𝕜 : Type _) (E : Type _) [IsROrC 𝕜] [AddCom
    symm : ∀ (u v : E), inner u v = inner v u
    nondeg : ∀ (u : E), (∀ (v : E), inner u v = 0) → u = 0
 
-theorem pseudo_euclidean_inner_product_sum (u v : (@PseudoEuclideanSpace f k b signature)) [Fintype f] : 
-      inner u v = ∑ i : f, u i * v i * ↑(signature i) := by
-  rw [inner, instInnerRealPseudoEuclideanSpace]
-  simp only [Pi.add_apply]
-
-  sorry
-
 #check Finset.sum_boole
 #check Finset.mul_sum
 #check Finset.sum_eq_single_of_mem
@@ -106,8 +105,7 @@ noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k 
   ⟨PseudoEuclideanSpaceBilinearForm,
     by
       intro u v
-      rw [inner, instInnerRealPseudoEuclideanSpace]
-      simp only [Pi.add_apply]
+      rw [PseudoEuclideanSpace.inner_product_sum]
       apply congrArg (Finset.sum Finset.univ)
       refine Eq.symm (funext ?h)
       intro x
