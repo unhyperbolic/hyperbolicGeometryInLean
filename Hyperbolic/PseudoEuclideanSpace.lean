@@ -28,6 +28,13 @@ namespace PseudoEuclideanSpace
 def BasisVector {f : Type _} [k: Fintype f] [b : DecidableEq f] (signature: f → PseudoEuclideanSpace.Sign) (i : f) : (@PseudoEuclideanSpace f k b signature) :=
   (fun (j : f) => if i = j then 1 else 0)
 
+theorem inner_product_basis_vector {f : Type _} [k: Fintype f] [b : DecidableEq f] { signature: f → PseudoEuclideanSpace.Sign } { u : PseudoEuclideanSpace signature} {i : f}:
+    inner u (BasisVector signature i) = (u i) * (signature i) :=
+  by
+    rw [inner, instInnerRealPseudoEuclideanSpace]
+    simp only [Pi.add_apply]
+    sorry
+
 end PseudoEuclideanSpace
 
 def PseudoEuclideanSpaceBilinearForm : BilinForm ℝ (@PseudoEuclideanSpace f k b signature) := {
@@ -88,6 +95,7 @@ theorem pseudo_euclidean_inner_product_sum (u v : (@PseudoEuclideanSpace f k b s
       inner u v = ∑ i : f, u i * v i * ↑(signature i) := by
   rw [inner, instInnerRealPseudoEuclideanSpace]
   simp only [Pi.add_apply]
+
   sorry
 
 #check Finset.sum_boole
@@ -110,12 +118,18 @@ noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k 
       dsimp
       intro j
       have p := i (PseudoEuclideanSpace.BasisVector signature j)
-      rw [inner, instInnerRealPseudoEuclideanSpace] at p
-      simp only [mul_ite, mul_one, mul_zero, ite_mul, zero_mul] at p 
-      simp only [Finset.sum_eq_single_of_mem] at p
-
+      rw [PseudoEuclideanSpace.inner_product_basis_vector] at p
+      symm at p
+      have := zero_eq_mul.mp p
+      cases' this with r s
+      · exact r
+      · exfalso
+        cases' (signature j).2 with d d
+        · rw [d] at s
+          linarith
+        · rw [d] at s
+          linarith
       ⟩
-   
 
 def MinkowskiSpaceSignature (d : ℕ) : Fin d → PseudoEuclideanSpace.Sign :=
     fun i => if (↑i : ℕ) = 0 then PseudoEuclideanSpace.Minus else PseudoEuclideanSpace.Plus
