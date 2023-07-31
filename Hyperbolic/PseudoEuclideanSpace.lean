@@ -7,8 +7,8 @@ import Hyperbolic.Arcosh
 class PseudoInnerProductSpace (𝕜 : Type _) [Ring 𝕜]  (E : Type _) [AddCommGroup E] [Module 𝕜 E] [Inner 𝕜 E] extends
    Inner 𝕜 E where
    bilin_form : BilinForm 𝕜 E
-   symm : ∀ (u v : E), inner u v = inner v u
-   nondeg : ∀ (u : E), (∀ (v : E), inner u v = 0) → u = 0
+   symm : ∀ (u v : E), inner u v = inner v u -- Use BilinForm.IsSymm
+   nondeg : ∀ (u : E), (∀ (v : E), inner u v = 0) → u = 0 -- Use BilinForm.Nondegenerate
 
 open BigOperators
 
