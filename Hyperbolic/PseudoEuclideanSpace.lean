@@ -28,14 +28,17 @@ instance : Inner ℝ (@PseudoEuclideanSpace f k b signature) :=
 
 namespace PseudoEuclideanSpace
 
+theorem inner_product_sum {f : Type _} [Fintype f] [b : DecidableEq f] {signature: f → PseudoEuclideanSpace.Sign} [k: Fintype f] (u v : (@PseudoEuclideanSpace f k b signature)): 
+      inner u v = ∑ i : f, u i * v i * ↑(signature i) := by
+  rw [inner, instInnerRealPseudoEuclideanSpace]
+
 def BasisVector {f : Type _} [k: Fintype f] [b : DecidableEq f] (signature: f → PseudoEuclideanSpace.Sign) (i : f) : (@PseudoEuclideanSpace f k b signature) :=
   (fun (j : f) => if i = j then 1 else 0)
 
 theorem inner_product_basis_vector {f : Type _} [k: Fintype f] [b : DecidableEq f] { signature: f → PseudoEuclideanSpace.Sign } { u : PseudoEuclideanSpace signature} {i : f}:
     inner u (BasisVector signature i) = (u i) * (signature i) :=
   by
-    rw [inner, instInnerRealPseudoEuclideanSpace]
-    simp only [Pi.add_apply]
+    rw [inner_product_sum]
     have s : ∑ i_1 : f, u i_1 * BasisVector signature i i_1 * ↑(signature i_1) = u i  * BasisVector signature i i * ↑(signature i) := by
       apply Finset.sum_eq_single_of_mem
       · exact Finset.mem_univ i
@@ -51,10 +54,6 @@ theorem inner_product_basis_vector {f : Type _} [k: Fintype f] [b : DecidableEq 
     rw [s, k]
     simp only [mul_one]
 
-theorem inner_product_sum {f : Type _} [Fintype f] [b : DecidableEq f] {signature: f → PseudoEuclideanSpace.Sign} [k: Fintype f] (u v : (@PseudoEuclideanSpace f k b signature)): 
-      inner u v = ∑ i : f, u i * v i * ↑(signature i) := by
-  rw [inner, instInnerRealPseudoEuclideanSpace]
-
 end PseudoEuclideanSpace
 
 def PseudoEuclideanSpaceBilinearForm : BilinForm ℝ (@PseudoEuclideanSpace f k b signature) := {
@@ -62,9 +61,7 @@ def PseudoEuclideanSpaceBilinearForm : BilinForm ℝ (@PseudoEuclideanSpace f k 
     bilin_add_left := by
       dsimp
       intro x y z
-      rw [PseudoEuclideanSpace.inner_product_sum]
-      rw [PseudoEuclideanSpace.inner_product_sum]
-      rw [PseudoEuclideanSpace.inner_product_sum]
+      simp only [PseudoEuclideanSpace.inner_product_sum]
       simp [← Finset.sum_add_distrib]
       apply congrArg (Finset.sum Finset.univ)
       refine Eq.symm (funext ?h)
