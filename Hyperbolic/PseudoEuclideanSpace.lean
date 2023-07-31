@@ -145,7 +145,7 @@ def UnitSpaceLike (v : MinkowskiSpace d) : Prop := ⟪v,v⟫_ℝ =1
 
 def Future (v : MinkowskiSpace d) : Prop := v 0 > 0
 
-def Hyperboloid (d : ℕ) := { p : MinkowskiSpace ⟨d + 1, by linarith⟩ // TimeLike p ∧ Future p}
+def Hyperboloid (d : ℕ) := { p : MinkowskiSpace ⟨d + 1, by linarith⟩ // UnitTimeLike p ∧ Future p}
 
 instance : Coe (Hyperboloid (d : ℕ)) (MinkowskiSpace ⟨d + 1, by linarith⟩) := ⟨ fun r => r.val ⟩
 
