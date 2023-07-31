@@ -7,7 +7,7 @@ import Hyperbolic.Arcosh
 class PseudoInnerProductSpace (𝕜 : Type _) [Ring 𝕜]  (E : Type _) [AddCommGroup E] [Module 𝕜 E] [Inner 𝕜 E] extends
    Inner 𝕜 E where
    bilin_form : BilinForm 𝕜 E
-   symm : ∀ (u v : E), inner u v = inner v u -- Use BilinForm.IsSymm
+   symm : bilin_form.IsSymm
    nondeg : ∀ (u : E), (∀ (v : E), inner u v = 0) → u = 0 -- Use BilinForm.Nondegenerate
 
 open BigOperators
@@ -105,6 +105,8 @@ noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k 
   ⟨PseudoEuclideanSpaceBilinearForm,
     by
       intro u v
+      rw [PseudoEuclideanSpaceBilinearForm]
+      dsimp
       rw [PseudoEuclideanSpace.inner_product_sum]
       apply congrArg (Finset.sum Finset.univ)
       apply (funext ?_)
