@@ -8,7 +8,7 @@ class PseudoInnerProductSpace (𝕜 : Type _) [Ring 𝕜]  (E : Type _) [AddComm
    Inner 𝕜 E where
    bilin_form : BilinForm 𝕜 E
    symm : bilin_form.IsSymm
-   nondeg : ∀ (u : E), (∀ (v : E), inner u v = 0) → u = 0 -- Use BilinForm.Nondegenerate
+   nondeg : bilin_form.Nondegenerate
 
 open BigOperators
 
@@ -113,6 +113,9 @@ noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k 
       intro x
       linarith,
     by
+      rw [PseudoEuclideanSpaceBilinearForm]
+      rw [BilinForm.Nondegenerate]
+      simp only
       intro u i
       apply funext
       dsimp
