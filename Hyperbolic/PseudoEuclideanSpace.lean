@@ -1,6 +1,9 @@
 import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Topology.MetricSpace.Basic
 import Hyperbolic.Arcosh
+import Mathlib.Init.Set
+
+-- set_option maxHeartbeats 0
 
 open BigOperators
 
@@ -33,9 +36,20 @@ theorem inner_product_basis_vector {f : Type _} [k: Fintype f] [b : DecidableEq 
   by
     rw [inner, instInnerRealPseudoEuclideanSpace]
     simp only [Pi.add_apply]
-    simp only [BasisVector]
-    simp only [Finset.sum_boole, Finset.mul_sum, Finset.sum_eq_single_of_mem]
-    sorry
+    have s : ∑ i_1 : f, u i_1 * BasisVector signature i i_1 * ↑(signature i_1) = u i  * BasisVector signature i i * ↑(signature i) := by
+      apply Finset.sum_eq_single_of_mem
+      · exact Finset.mem_univ i
+      · intro iu _ it
+        rw [BasisVector]
+        symm at it
+        rw [if_neg it]
+        simp only [mul_zero, zero_mul]
+    have k : BasisVector signature i i = 1 := by
+      rw [BasisVector]
+      rw [if_pos]
+      rfl
+    rw [s, k]
+    simp only [mul_one]
 
 theorem inner_product_sum {f : Type _} [Fintype f] [b : DecidableEq f] {signature: f → PseudoEuclideanSpace.Sign} [k: Fintype f] (u v : (@PseudoEuclideanSpace f k b signature)): 
       inner u v = ∑ i : f, u i * v i * ↑(signature i) := by
@@ -90,15 +104,11 @@ def PseudoEuclideanSpaceBilinearForm : BilinForm ℝ (@PseudoEuclideanSpace f k 
       linarith
   }
 
--- set_option maxHeartbeats 0
-
 class PseudoInnerProductSpace (𝕜 : Type _) (E : Type _) [IsROrC 𝕜] [AddCommGroup E] [Module 𝕜 E] [Inner 𝕜 E] extends
    Inner 𝕜 E where
    bilin_form : BilinForm 𝕜 E
    symm : ∀ (u v : E), inner u v = inner v u
    nondeg : ∀ (u : E), (∀ (v : E), inner u v = 0) → u = 0
-
-
 
 noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k b signature) :=
   ⟨PseudoEuclideanSpaceBilinearForm,
