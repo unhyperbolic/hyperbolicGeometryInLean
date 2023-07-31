@@ -1,7 +1,6 @@
 import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Topology.MetricSpace.Basic
 import Hyperbolic.Arcosh
-import Mathlib.Init.Set
 
 -- set_option maxHeartbeats 0
 
