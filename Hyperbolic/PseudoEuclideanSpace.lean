@@ -59,44 +59,39 @@ end PseudoEuclideanSpace
 def PseudoEuclideanSpaceBilinearForm : BilinForm ℝ (@PseudoEuclideanSpace f k b signature) := {
     bilin := fun v w => ⟪v, w⟫_ℝ
     bilin_add_left := by
-      dsimp
       intro x y z
-      simp only [PseudoEuclideanSpace.inner_product_sum]
-      simp [← Finset.sum_add_distrib]
+      simp only [PseudoEuclideanSpace.inner_product_sum,
+                 ← Finset.sum_add_distrib,
+                 Pi.add_apply]
       apply congrArg (Finset.sum Finset.univ)
-      refine Eq.symm (funext ?h)
+      apply (funext ?_)
       intro x1
-      rw [add_mul]
-      rw [add_mul]
+      simp only [add_mul]
     bilin_smul_left := by
-      dsimp
-      rw [inner, instInnerRealPseudoEuclideanSpace]
-      simp only [Pi.add_apply]
-      simp [Finset.mul_sum]
       intro a x y
+      simp only [PseudoEuclideanSpace.inner_product_sum,
+                 Pi.add_apply, Finset.mul_sum,
+                 Pi.smul_apply, smul_eq_mul]
       apply congrArg (Finset.sum Finset.univ)
-      refine Eq.symm (funext ?h)
+      apply (funext ?_)
       intro x1
       linarith
     bilin_add_right := by
-      dsimp
-      [inner, instInnerRealPseudoEuclideanSpace]
-      simp only [Pi.add_apply]
       intro x y z
-      simp [← Finset.sum_add_distrib]
+      simp only [PseudoEuclideanSpace.inner_product_sum,
+                 ← Finset.sum_add_distrib,
+                 Pi.add_apply]
       apply congrArg (Finset.sum Finset.univ)
-      refine Eq.symm (funext ?h)
+      apply (funext ?_)
       intro x1
-      rw [mul_add]
-      rw [add_mul]
+      simp only [mul_add, add_mul]
     bilin_smul_right := by
-      dsimp
-      rw [inner, instInnerRealPseudoEuclideanSpace]
-      simp only [Pi.add_apply]
-      simp [Finset.mul_sum]
       intro a x y
+      simp only [PseudoEuclideanSpace.inner_product_sum,
+                 Pi.add_apply, Finset.mul_sum,
+                 Pi.smul_apply, smul_eq_mul]
       apply congrArg (Finset.sum Finset.univ)
-      refine Eq.symm (funext ?h)
+      apply (funext ?_)
       intro x1
       linarith
   }
@@ -113,7 +108,7 @@ noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k 
       intro u v
       rw [PseudoEuclideanSpace.inner_product_sum]
       apply congrArg (Finset.sum Finset.univ)
-      refine Eq.symm (funext ?h)
+      apply (funext ?_)
       intro x
       linarith,
     by
