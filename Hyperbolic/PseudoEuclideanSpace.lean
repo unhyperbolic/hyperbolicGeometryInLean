@@ -4,6 +4,12 @@ import Hyperbolic.Arcosh
 
 -- set_option maxHeartbeats 0
 
+class PseudoInnerProductSpace (𝕜 : Type _) [Ring 𝕜]  (E : Type _) [AddCommGroup E] [Module 𝕜 E] [Inner 𝕜 E] extends
+   Inner 𝕜 E where
+   bilin_form : BilinForm 𝕜 E
+   symm : ∀ (u v : E), inner u v = inner v u
+   nondeg : ∀ (u : E), (∀ (v : E), inner u v = 0) → u = 0
+
 open BigOperators
 
 namespace PseudoEuclideanSpace
@@ -94,12 +100,6 @@ def PseudoEuclideanSpaceBilinearForm : BilinForm ℝ (@PseudoEuclideanSpace f k 
       intro x1
       linarith
   }
-
-class PseudoInnerProductSpace (𝕜 : Type _) (E : Type _) [IsROrC 𝕜] [AddCommGroup E] [Module 𝕜 E] [Inner 𝕜 E] extends
-   Inner 𝕜 E where
-   bilin_form : BilinForm 𝕜 E
-   symm : ∀ (u v : E), inner u v = inner v u
-   nondeg : ∀ (u : E), (∀ (v : E), inner u v = 0) → u = 0
 
 noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k b signature) :=
   ⟨PseudoEuclideanSpaceBilinearForm,
