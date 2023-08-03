@@ -4,9 +4,9 @@ import Hyperbolic.Arcosh
 
 -- set_option maxHeartbeats 0
 
-class PseudoInnerProductSpace (𝕜 : Type _) [Ring 𝕜]  (E : Type _) [AddCommGroup E] [Module 𝕜 E] [Inner 𝕜 E] extends
-   Inner 𝕜 E where
-   bilin_form : BilinForm 𝕜 E
+class PseudoInnerProductSpace (E : Type _) [AddCommGroup E] [Module ℝ E] [Inner ℝ E] extends
+   Inner ℝ E where
+   bilin_form : BilinForm ℝ E
    symm : bilin_form.IsSymm
    nondeg : bilin_form.Nondegenerate
 
@@ -101,7 +101,7 @@ def PseudoEuclideanSpaceBilinearForm : BilinForm ℝ (@PseudoEuclideanSpace f k 
       linarith
   }
 
-noncomputable instance : PseudoInnerProductSpace ℝ (@PseudoEuclideanSpace f k b signature) :=
+noncomputable instance : PseudoInnerProductSpace (@PseudoEuclideanSpace f k b signature) :=
   ⟨PseudoEuclideanSpaceBilinearForm,
     by
       intro u v
