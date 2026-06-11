@@ -1,0 +1,3 @@
+Formalizing some basic hyperbolic geometry
+
+This is in the very early stages and experimental and has lots of sorry's...
